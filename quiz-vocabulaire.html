@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Vocabulaire – Mer & Météo</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Inter:wght@400;500;600&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ocean: #0a1628;
+    --deep: #0d2244;
+    --swell: #1a3a6e;
+    --foam: #e8f4f8;
+    --salt: #f0f7fa;
+    --coral: #e05c3a;
+    --gold: #f5c842;
+    --mint: #3ecfb2;
+    --text: #d6eaf5;
+    --muted: #7aa8c4;
+    --card: #112035;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--ocean);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 48px;
+    background-image:
+      radial-gradient(ellipse 80% 40% at 50% -10%, rgba(26,58,110,0.6) 0%, transparent 70%),
+      repeating-linear-gradient(0deg, transparent, transparent 60px, rgba(255,255,255,0.012) 60px, rgba(255,255,255,0.012) 61px);
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 32px;
+    max-width: 600px;
+    width: 100%;
+  }
+
+  .eyebrow {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--mint);
+    margin-bottom: 10px;
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(28px, 6vw, 44px);
+    font-weight: 800;
+    line-height: 1.05;
+    color: var(--foam);
+    margin-bottom: 8px;
+  }
+
+  h1 span { color: var(--gold); }
+
+  .subtitle {
+    font-size: 14px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  /* Mode selector */
+  .mode-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 28px;
+    background: var(--card);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 14px;
+    padding: 6px;
+    width: 100%;
+    max-width: 600px;
+  }
+
+  .mode-btn {
+    flex: 1;
+    padding: 9px 10px;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.18s;
+    white-space: nowrap;
+  }
+
+  .mode-btn:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+  .mode-btn.active { background: var(--swell); color: var(--foam); font-weight: 600; }
+
+  /* Quiz card */
+  .quiz-area {
+    width: 100%;
+    max-width: 600px;
+  }
+
+  .progress-bar-wrap {
+    height: 4px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 99px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--mint), var(--gold));
+    border-radius: 99px;
+    transition: width 0.4s ease;
+  }
+
+  .score-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .score-badge {
+    display: flex;
+    gap: 16px;
+  }
+
+  .score-badge span { font-weight: 600; }
+  .score-badge .ok { color: var(--mint); }
+  .score-badge .ko { color: var(--coral); }
+
+  .card {
+    background: var(--card);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 20px;
+    padding: 36px 32px 28px;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--mint), var(--gold));
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .card.answered::before { opacity: 1; }
+
+  .question-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  .question-text {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(22px, 5vw, 30px);
+    font-weight: 700;
+    color: var(--foam);
+    margin-bottom: 28px;
+    line-height: 1.2;
+  }
+
+  /* MCQ choices */
+  .choices {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .choice-btn {
+    padding: 14px 16px;
+    background: rgba(255,255,255,0.04);
+    border: 1.5px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    line-height: 1.35;
+    transition: all 0.15s;
+  }
+
+  .choice-btn:hover:not(:disabled) {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.2);
+  }
+
+  .choice-btn.correct {
+    background: rgba(62,207,178,0.15);
+    border-color: var(--mint);
+    color: var(--mint);
+    font-weight: 600;
+  }
+
+  .choice-btn.wrong {
+    background: rgba(224,92,58,0.15);
+    border-color: var(--coral);
+    color: var(--coral);
+  }
+
+  .choice-btn:disabled { cursor: default; }
+
+  /* Text input mode */
+  .input-row {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+  }
+
+  .answer-input {
+    flex: 1;
+    padding: 14px 18px;
+    background: rgba(255,255,255,0.05);
+    border: 1.5px solid rgba(255,255,255,0.12);
+    border-radius: 12px;
+    color: var(--foam);
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .answer-input:focus { border-color: var(--mint); }
+  .answer-input.correct { border-color: var(--mint); background: rgba(62,207,178,0.1); }
+  .answer-input.wrong { border-color: var(--coral); background: rgba(224,92,58,0.1); }
+
+  .submit-btn {
+    padding: 14px 22px;
+    background: var(--mint);
+    border: none;
+    border-radius: 12px;
+    color: var(--ocean);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+
+  .submit-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+  .submit-btn:active { transform: translateY(0); }
+  .submit-btn:disabled { opacity: 0.4; cursor: default; transform: none; }
+
+  /* Feedback */
+  .feedback {
+    margin-top: 18px;
+    padding: 14px 18px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    display: none;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .feedback.show { display: flex; }
+  .feedback.ok { background: rgba(62,207,178,0.12); color: var(--mint); border: 1px solid rgba(62,207,178,0.25); }
+  .feedback.ko { background: rgba(224,92,58,0.12); color: #f08070; border: 1px solid rgba(224,92,58,0.25); }
+
+  .feedback-icon { font-size: 20px; flex-shrink: 0; }
+
+  /* Action buttons */
+  .action-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 18px;
+  }
+
+  .next-btn {
+    flex: 1;
+    padding: 14px;
+    background: var(--swell);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 12px;
+    color: var(--foam);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+    display: none;
+  }
+
+  .next-btn.show { display: block; }
+  .next-btn:hover { background: #1f4a8a; }
+
+  /* Results */
+  .results-screen {
+    display: none;
+    text-align: center;
+    width: 100%;
+    max-width: 600px;
+  }
+
+  .results-screen.show { display: block; }
+
+  .big-score {
+    font-family: 'Syne', sans-serif;
+    font-size: 80px;
+    font-weight: 800;
+    line-height: 1;
+    margin: 16px 0 4px;
+  }
+
+  .big-score.excellent { color: var(--gold); }
+  .big-score.good { color: var(--mint); }
+  .big-score.ok-score { color: #7abadf; }
+  .big-score.poor { color: var(--coral); }
+
+  .result-label {
+    font-size: 18px;
+    color: var(--muted);
+    margin-bottom: 28px;
+  }
+
+  .missed-list {
+    background: var(--card);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 16px;
+    padding: 20px 24px;
+    text-align: left;
+    margin-bottom: 24px;
+  }
+
+  .missed-list h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--coral);
+    margin-bottom: 14px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .missed-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-size: 14px;
+    gap: 12px;
+  }
+
+  .missed-item:last-child { border-bottom: none; }
+  .missed-term { color: #7abadf; font-weight: 500; }
+  .missed-answer { color: var(--mint); }
+
+  .restart-btn {
+    display: inline-block;
+    padding: 14px 32px;
+    background: var(--gold);
+    border: none;
+    border-radius: 12px;
+    color: var(--ocean);
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    letter-spacing: 0.02em;
+  }
+
+  .restart-btn:hover { opacity: 0.88; transform: translateY(-2px); }
+
+  /* Flashcard mode */
+  .flashcard {
+    perspective: 1000px;
+    cursor: pointer;
+    user-select: none;
+    margin-bottom: 20px;
+  }
+
+  .flashcard-inner {
+    position: relative;
+    width: 100%;
+    min-height: 200px;
+    transform-style: preserve-3d;
+    transition: transform 0.5s cubic-bezier(.4,0,.2,1);
+  }
+
+  .flashcard.flipped .flashcard-inner { transform: rotateY(180deg); }
+
+  .flashcard-face {
+    position: absolute;
+    width: 100%;
+    min-height: 200px;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    background: var(--card);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 32px;
+    text-align: center;
+  }
+
+  .flashcard-back {
+    transform: rotateY(180deg);
+    background: var(--deep);
+    border-color: rgba(62,207,178,0.2);
+  }
+
+  .fc-hint { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+
+  .fc-term {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(26px, 6vw, 36px);
+    font-weight: 800;
+    color: var(--foam);
+    line-height: 1.15;
+  }
+
+  .fc-translation {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(20px, 4vw, 28px);
+    font-weight: 700;
+    color: var(--mint);
+    line-height: 1.2;
+  }
+
+  .fc-nav {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .fc-nav button {
+    padding: 10px 24px;
+    background: var(--swell);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    color: var(--foam);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .fc-nav button:hover { background: #1f4a8a; }
+  .fc-counter { font-size: 13px; color: var(--muted); min-width: 60px; text-align: center; }
+
+  @media (max-width: 480px) {
+    .choices { grid-template-columns: 1fr; }
+    .card { padding: 24px 18px 20px; }
+    h1 { font-size: 26px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Révision · Mer & Météo</div>
+  <h1>Vocabulaire <span>vernaculaire</span></h1>
+  <p class="subtitle">50 termes · vents, marées, lune, saisons</p>
+</header>
+
+<div class="mode-bar">
+  <button class="mode-btn active" onclick="setMode('mcq')">QCM</button>
+  <button class="mode-btn" onclick="setMode('typing')">Saisie</button>
+  <button class="mode-btn" onclick="setMode('flashcard')">Flashcards</button>
+</div>
+
+<!-- Quiz area -->
+<div class="quiz-area" id="quizArea">
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
+  </div>
+
+  <div class="score-row">
+    <span id="questionCounter">Question 1 / 10</span>
+    <div class="score-badge">
+      <span class="ok">✓ <span id="scoreOk">0</span></span>
+      <span class="ko">✗ <span id="scoreKo">0</span></span>
+    </div>
+  </div>
+
+  <div class="card" id="mainCard">
+    <div class="question-label" id="qLabel">Traduis en français</div>
+    <div class="question-text" id="questionText">—</div>
+
+    <!-- MCQ choices -->
+    <div class="choices" id="choicesArea"></div>
+
+    <!-- Typing input -->
+    <div class="input-row" id="inputArea" style="display:none">
+      <input class="answer-input" id="answerInput" type="text" placeholder="Ta réponse…" autocomplete="off" autocorrect="off" spellcheck="false" />
+      <button class="submit-btn" id="submitBtn" onclick="checkTyped()">OK</button>
+    </div>
+
+    <div class="feedback" id="feedback">
+      <span class="feedback-icon" id="feedbackIcon"></span>
+      <span id="feedbackText"></span>
+    </div>
+  </div>
+
+  <button class="next-btn" id="nextBtn" onclick="nextQuestion()">Question suivante →</button>
+</div>
+
+<!-- Flashcard area -->
+<div class="quiz-area" id="flashcardArea" style="display:none">
+  <div class="score-row">
+    <span></span>
+    <div class="fc-nav">
+      <button onclick="fcNav(-1)">← Préc.</button>
+      <span class="fc-counter" id="fcCounter">1 / 50</span>
+      <button onclick="fcNav(1)">Suiv. →</button>
+    </div>
+  </div>
+
+  <div class="flashcard" id="flashcard" onclick="flipCard()">
+    <div class="flashcard-inner" id="flashcardInner">
+      <div class="flashcard-face">
+        <div class="fc-hint">terme vernaculaire — cliquer pour révéler</div>
+        <div class="fc-term" id="fcFront">—</div>
+      </div>
+      <div class="flashcard-face flashcard-back">
+        <div class="fc-hint">traduction française</div>
+        <div class="fc-translation" id="fcBack">—</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Results screen -->
+<div class="results-screen" id="resultsScreen">
+  <div class="eyebrow">Résultats</div>
+  <div class="big-score" id="bigScore">0/10</div>
+  <div class="result-label" id="resultLabel"></div>
+  <div class="missed-list" id="missedList" style="display:none">
+    <h3>À retravailler</h3>
+    <div id="missedItems"></div>
+  </div>
+  <button class="restart-btn" onclick="restart()">Recommencer</button>
+</div>
+
+<script>
+const VOCAB = [
+  ["uvaup","petit vent"],
+  ["hâk kuru","vent fort"],
+  ["piguk","étoile"],
+  ["mwaluk","lune"],
+  ["thi idaama mwaluk","pleine lune"],
+  ["pwadan mwaluk","lune noire"],
+  ["taabwa dame hmwaluk","nouvelle lune"],
+  ["fo cii-hmwaluk","premier quartier"],
+  ["pwadu cii-hmwaluk","dernier quartier"],
+  ["wap","marée haute"],
+  ["mat du","marée descendante"],
+  ["hare mat","marée basse"],
+  ["tho maap","marée montante"],
+  ["dabi","courant marin"],
+  ["sho maadan","beau temps"],
+  ["mwang maadan","mauvais temps"],
+  ["kuru hang","cyclone"],
+  ["âdap","calme plat"],
+  ["biira","vague (de vent)"],
+  ["wîî nok","vague (de poisson)"],
+  ["biira xac","houle de fond"],
+  ["biira kaan","houle du grand récif"],
+  ["bweravaac","vent d'ouest"],
+  ["bweo","vent d'est"],
+  ["boda pwêêmwa","vent du nord"],
+  ["dalaor","vent du sud"],
+  ["bweeravac","vent du sud-ouest"],
+  ["ceebaep","vent du nord-est"],
+  ["dayaan","vent du nord vers Taanlô"],
+  ["waavac","vent plus au nord"],
+  ["davak","vent du sud-ouest"],
+  ["dayim","vent d'ouest (fort)"],
+  ["kuru bwaa-t","vent d'est"],
+  ["hululuu kuru","sifflement du vent"],
+  ["dic","rafale"],
+  ["kuru-xââ","tourbillon"],
+  ["diya kuru","rafales de vent"],
+  ["muu biira","écume des vagues"],
+  ["hûlûlû biira","bruit des vagues"],
+  ["beâât","saison des pluies"],
+  ["mwexoot","saison de mûrissement"],
+  ["dayaan mweyiviny","saison de plantation des ignames"],
+  ["dayaan thu hiip","saison des récoltes"],
+];
+
+let mode = 'mcq';
+let questions = [];
+let currentQ = 0;
+let scoreOk = 0;
+let scoreKo = 0;
+let missed = [];
+let answered = false;
+let fcIndex = 0;
+let fcFlipped = false;
+const QUIZ_LEN = 15;
+
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll('.mode-btn').forEach((b,i) => b.classList.toggle('active', ['mcq','typing','flashcard'][i] === m));
+  if (m === 'flashcard') {
+    document.getElementById('quizArea').style.display = 'none';
+    document.getElementById('flashcardArea').style.display = 'block';
+    document.getElementById('resultsScreen').classList.remove('show');
+    initFlashcard();
+  } else {
+    document.getElementById('flashcardArea').style.display = 'none';
+    document.getElementById('quizArea').style.display = 'block';
+    restart();
+  }
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function buildQuestions() {
+  // Randomly ask either "vernaculaire → français" or "français → vernaculaire"
+  const pool = shuffle(VOCAB).slice(0, QUIZ_LEN);
+  return pool.map(([term, fr]) => {
+    const direction = Math.random() < 0.5 ? 'v2f' : 'f2v';
+    const question = direction === 'v2f' ? term : fr;
+    const answer = direction === 'v2f' ? fr : term;
+    // Distractors
+    const others = shuffle(VOCAB.filter(v => v[0] !== term)).slice(0, 3);
+    const distractors = others.map(v => direction === 'v2f' ? v[1] : v[0]);
+    const choices = shuffle([answer, ...distractors]);
+    return { question, answer, choices, direction };
+  });
+}
+
+function restart() {
+  questions = buildQuestions();
+  currentQ = 0;
+  scoreOk = 0;
+  scoreKo = 0;
+  missed = [];
+  answered = false;
+  document.getElementById('resultsScreen').classList.remove('show');
+  document.getElementById('quizArea').style.display = 'block';
+  document.getElementById('mainCard').classList.remove('answered');
+  document.getElementById('nextBtn').classList.remove('show');
+  renderQuestion();
+}
+
+function renderQuestion() {
+  if (currentQ >= questions.length) { showResults(); return; }
+  const q = questions[currentQ];
+  answered = false;
+
+  document.getElementById('mainCard').classList.remove('answered');
+  document.getElementById('progressBar').style.width = (currentQ / questions.length * 100) + '%';
+  document.getElementById('questionCounter').textContent = `Question ${currentQ + 1} / ${questions.length}`;
+  document.getElementById('scoreOk').textContent = scoreOk;
+  document.getElementById('scoreKo').textContent = scoreKo;
+
+  const label = q.direction === 'v2f' ? 'Traduis en français' : 'Donne le terme vernaculaire';
+  document.getElementById('qLabel').textContent = label;
+  document.getElementById('questionText').textContent = q.question;
+
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback';
+
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.classList.remove('show');
+
+  if (mode === 'mcq') {
+    document.getElementById('choicesArea').style.display = 'grid';
+    document.getElementById('inputArea').style.display = 'none';
+    const area = document.getElementById('choicesArea');
+    area.innerHTML = '';
+    q.choices.forEach(c => {
+      const btn = document.createElement('button');
+      btn.className = 'choice-btn';
+      btn.textContent = c;
+      btn.onclick = () => selectChoice(btn, c, q.answer);
+      area.appendChild(btn);
+    });
+  } else {
+    document.getElementById('choicesArea').style.display = 'none';
+    document.getElementById('inputArea').style.display = 'flex';
+    const inp = document.getElementById('answerInput');
+    inp.value = '';
+    inp.className = 'answer-input';
+    inp.disabled = false;
+    document.getElementById('submitBtn').disabled = false;
+    setTimeout(() => inp.focus(), 50);
+    inp.onkeydown = e => { if (e.key === 'Enter') checkTyped(); };
+  }
+}
+
+function selectChoice(btn, chosen, answer) {
+  if (answered) return;
+  answered = true;
+  document.getElementById('mainCard').classList.add('answered');
+
+  const correct = normalize(chosen) === normalize(answer);
+  btn.classList.add(correct ? 'correct' : 'wrong');
+
+  if (!correct) {
+    document.querySelectorAll('.choice-btn').forEach(b => {
+      if (normalize(b.textContent) === normalize(answer)) b.classList.add('correct');
+    });
+  }
+
+  document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
+  showFeedback(correct, answer);
+  if (correct) scoreOk++; else { scoreKo++; missed.push(questions[currentQ]); }
+  document.getElementById('scoreOk').textContent = scoreOk;
+  document.getElementById('scoreKo').textContent = scoreKo;
+  document.getElementById('nextBtn').classList.add('show');
+}
+
+function checkTyped() {
+  if (answered) return;
+  const inp = document.getElementById('answerInput');
+  const val = inp.value.trim();
+  if (!val) return;
+  answered = true;
+  document.getElementById('mainCard').classList.add('answered');
+
+  const answer = questions[currentQ].answer;
+  const correct = normalize(val) === normalize(answer);
+
+  inp.className = 'answer-input ' + (correct ? 'correct' : 'wrong');
+  inp.disabled = true;
+  document.getElementById('submitBtn').disabled = true;
+
+  showFeedback(correct, answer);
+  if (correct) scoreOk++; else { scoreKo++; missed.push(questions[currentQ]); }
+  document.getElementById('scoreOk').textContent = scoreOk;
+  document.getElementById('scoreKo').textContent = scoreKo;
+  document.getElementById('nextBtn').classList.add('show');
+}
+
+function normalize(s) {
+  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/['']/g, "'").trim();
+}
+
+function showFeedback(correct, answer) {
+  const fb = document.getElementById('feedback');
+  document.getElementById('feedbackIcon').textContent = correct ? '✓' : '✗';
+  document.getElementById('feedbackText').textContent = correct
+    ? 'Exact !'
+    : `Réponse correcte : ${answer}`;
+  fb.className = 'feedback show ' + (correct ? 'ok' : 'ko');
+}
+
+function nextQuestion() {
+  currentQ++;
+  renderQuestion();
+  document.getElementById('nextBtn').classList.remove('show');
+}
+
+function showResults() {
+  document.getElementById('quizArea').style.display = 'none';
+  const rs = document.getElementById('resultsScreen');
+  rs.classList.add('show');
+
+  const pct = Math.round(scoreOk / questions.length * 100);
+  const bs = document.getElementById('bigScore');
+  bs.textContent = `${scoreOk}/${questions.length}`;
+  bs.className = 'big-score ' + (pct >= 90 ? 'excellent' : pct >= 70 ? 'good' : pct >= 50 ? 'ok-score' : 'poor');
+
+  const labels = ['Excellent ! Maîtrise parfaite 🌟', 'Très bien ! Continue comme ça 👍', 'Pas mal, encore un peu de travail 💪', 'À retravailler sérieusement 📚'];
+  document.getElementById('resultLabel').textContent = pct >= 90 ? labels[0] : pct >= 70 ? labels[1] : pct >= 50 ? labels[2] : labels[3];
+
+  if (missed.length > 0) {
+    const ml = document.getElementById('missedList');
+    ml.style.display = 'block';
+    const mi = document.getElementById('missedItems');
+    mi.innerHTML = missed.map(q => `
+      <div class="missed-item">
+        <span class="missed-term">${q.question}</span>
+        <span class="missed-answer">${q.answer}</span>
+      </div>`).join('');
+  } else {
+    document.getElementById('missedList').style.display = 'none';
+  }
+}
+
+// Flashcard logic
+function initFlashcard() {
+  fcIndex = 0;
+  fcFlipped = false;
+  document.getElementById('flashcard').classList.remove('flipped');
+  renderFlashcard();
+}
+
+function renderFlashcard() {
+  const [term, fr] = VOCAB[fcIndex];
+  document.getElementById('fcFront').textContent = term;
+  document.getElementById('fcBack').textContent = fr;
+  document.getElementById('fcCounter').textContent = `${fcIndex + 1} / ${VOCAB.length}`;
+  fcFlipped = false;
+  document.getElementById('flashcard').classList.remove('flipped');
+}
+
+function flipCard() {
+  fcFlipped = !fcFlipped;
+  document.getElementById('flashcard').classList.toggle('flipped', fcFlipped);
+}
+
+function fcNav(dir) {
+  fcIndex = (fcIndex + dir + VOCAB.length) % VOCAB.length;
+  renderFlashcard();
+}
+
+// Init
+restart();
+</script>
+</body>
+</html>
